@@ -1,0 +1,60 @@
+/* Un reset de style pour commencer en beauté */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* Une police pour le plaisir */
+  }
+  
+  /* Le body aura forcément besoin de tout ça */
+  body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(45deg, #ff0008, #ff9d00, #ccff00, #6aff00, #00ffe5 , blue
+    );
+    background-size: 400% 400%;
+    animation: gradientBackground 5s ease infinite;
+    color: white;
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Animation ridiculement lente pour le fond */
+  @keyframes gradientBackground {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  /* Parce que ce h1 mérite tellement d'amour */
+  h1 {
+    font-size: 5vw;
+    font-weight: 900;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    border: 10px double rgba(255, 255, 255, 0.7);
+    padding: 30px;
+    border-radius: 50px;
+    box-shadow: 0px 0px 30px 10px rgba(0, 0, 0, 0.5);
+    transition: all 0.1s ease-in-out;
+    transform: scale(1) rotate(0deg);
+  }
+  
+  /* Et bien sûr une petite animation pour le h1 */
+  h1:hover {
+    color: #000;
+    text-shadow: 0px 0px 20px rgba(255, 255, 255, 0.7);
+    transform: scale(1.2) rotate(10deg);
+    cursor: pointer;
+  }
+  
+  /* N'oublions pas de rendre le h1 mobile-friendly, évidemment */
+  @media (max-width: 600px) {
+    h1 {
+      font-size: 15vw;
+      border-width: 5px;
+      padding: 20px;
+    }
+  }
+  
