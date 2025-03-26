@@ -2,15 +2,15 @@
 require_once("./models/articlesManager.php");
 require_once("./services/response.php");
 require_once("./services/regex.php");
-$template = './views/pages/book_add_form.php';
+$template = './views/pages/book_update.php';
 
 
 $errors = [];
 $successes = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$current_data = getBookById($_GET['id']);
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['title']) && trim($_POST['title']) !== '') { 
-        // OK
         $title = $_POST['title'];
         $titleLen = strlen($title);
         if ($titleLen < 2 || $titleLen > 150) { 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Le champ 'Année de publication' est obligatoire. Merci de saisir une valeur.";
     }
     if (empty($errors)) {
-        addBook();
-        $successes[] = "Le livre a bien été ajouté";
+        updateBook($_GET['id']);
+        $successes[] = "Le livre a bien été modifié";
     }
 }

@@ -5,12 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $seo['title'] ?></title>
-    <link rel="stylesheet" href="style/404.css">
-    <link rel="stylesheet" href="public/css/app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <meta name="description" content=<?= $seo["description"] ?>>
 </head>
 <body>
-    <?php require('views/partials/_header.html') ?>
+    <?php require('views/partials/_header.php') ?>
     <main>
         <?php require($template) ?>
     </main>

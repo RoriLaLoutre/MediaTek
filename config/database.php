@@ -1,10 +1,11 @@
 <?php
- const DB_CONFIG = [
-    'db' => 'mysql',
-    'host' => 'localhost',
-    'port' => '3307',
-    'dbname' => 'mabd', 
-    'username' => 'root',
-    'password' => '', 
- ];
+require_once("./env.php");
 
+ const DB_CONFIG = [
+    'db' => db,
+    'host' => host,
+    'port' => port,
+    'dbname' => dbname, 
+    'username' => username,
+    'password' => password, 
+ ];

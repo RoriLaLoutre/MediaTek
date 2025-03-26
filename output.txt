@@ -1,0 +1,1237 @@
+
+======================================================================================
+
+Contenu du fichier : config\database.php
+
+======================================================================================
+<?php
+ const DB_CONFIG = [
+    'db' => 'mysql',
+    'host' => 'localhost',
+    'port' => '3306',
+    'dbname' => 'owasp1', 
+    'username' => 'root',
+    'password' => '', 
+ ];
+
+0
+======================================================================================
+
+Contenu du fichier : config\routes.php
+
+======================================================================================
+<?php
+
+const AVLAIBLE_ROUTES = [
+	"home" => ["template" => "homeController.php",
+                "seo" => [
+                    "title" => "Home",
+                    "description" => "Page home"
+                ]],
+    "404" => ["template" => "404Controller.php",
+                "seo" => [
+                    "title" => "404",
+                    "description" => "Page 404"
+                ]],
+    "Ajouter" => ["template" => "ajoutController.php",
+                "seo" => [
+                    "title" => "Ajout livre",
+                    "description" => "Permet d'ajouter de nouveaux livres"
+                ]],
+    "Ajout_illustration" => ["template" => "illustrationController.php",
+                "seo" => [
+                    "title" => "Ajout d'une illustration",
+                    "description" => "Permet d'ajouter de nouvelles illustrations"
+                ]],         
+    "Modifier" => ["template" => "modifierBookController.php",
+                "seo" => [
+                    "title" => "Modifier",
+                    "description" => "Permet de choisir le livre à modifier"
+                ]
+    ],
+    "Supprimer" => ["template" => "SupprimerBookController.php",
+    "seo" => [
+        "title" => "Supprimer",
+        "description" => "Permet de choisir le livre à supprimer"
+        ]
+    ],
+    "Logs" => ["template" => "logsController.php",
+    "seo" => [
+        "title" => "Logs",
+        "description" => "Page de choix connexion ou inscription"
+        ]
+    ],
+    "Login" => ["template" => "loginController.php",
+    "seo" => [
+        "title" => "Login",
+        "description" => "Page de connexion"
+        ]
+    ],
+    "SignIn" => ["template" => "signInController.php",
+    "seo" => [
+        "title" => "Inscription",
+        "description" => "Page d'inscription"
+        ]
+    ],
+    "Mail" => ["template" => "mailController.php",
+    "seo" => [
+        "title" => "Mail",
+        "description" => "Page de code mail"
+        ]
+    ],
+    "Deconnexion" => ["template" => "unLogController.php",
+    "seo" => [
+        "title" => "deconnexion",
+        "description" => "Page de deconnexion"
+        ]
+    ],
+
+];
+
+const DEFAULT_ROUTE = AVLAIBLE_ROUTES['404'];0
+======================================================================================
+
+Contenu du fichier : Controller\404Controller.php
+
+======================================================================================
+<?php
+
+$template = './views/pages/404.php';
+
+
+0
+======================================================================================
+
+Contenu du fichier : Controller\ajoutController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+require_once("./services/regex.php");
+$template = './views/pages/book_add_form.php';
+
+
+$errors = [];
+$successes = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (isset($_POST['title']) && trim($_POST['title']) !== '') { 
+        // OK
+        $title = $_POST['title'];
+        $titleLen = strlen($title);
+        if ($titleLen < 2 || $titleLen > 150) { 
+
+            $errors[] = "Le champ 'Titre' doit contenir entre 2 et 150 caractères.";
+        }
+    } else {
+        $errors[] = "Le champ 'Titre' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['isbn']) && trim($_POST['isbn']) !== '') { 
+        $isbn = $_POST['isbn'];
+        if (!preg_match($validPatterns['isbn'], $isbn)) { 
+            $errors[] = "Le champ 'ISBN' doit contenir exactement 13 chiffres.";
+        }
+    } else {
+        $errors[] = "Le champ 'ISBN' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['summary'])  && strlen($_POST["summary"]) > 65535) {
+        $errors[] = "Le champ 'Résumé' doit contenir au plus 65535 caractères.";
+    }
+
+    if (isset($_POST['publication_year']) && trim($_POST['publication_year']) !== '') { 
+        $publicationYear = $_POST['publication_year'];
+        if (!preg_match($validPatterns['year'], $publicationYear)) {
+            $errors[] = "Le champ 'Année de publication' doit être au format YYYY (ex. : 1997).";
+        }
+    } else {
+        $errors[] = "Le champ 'Année de publication' est obligatoire. Merci de saisir une valeur.";
+    }
+    if (empty($errors)) {
+        addBook();
+        $successes[] = "Le livre a bien été ajouté";
+    }
+}0
+======================================================================================
+
+Contenu du fichier : Controller\homeController.php
+
+======================================================================================
+<?php
+require_once('./models/articlesManager.php');
+
+$books = getAllBooks();
+$illustrations = getAllIllustrations();
+
+$template = './views/pages/home.php';
+
+
+
+0
+======================================================================================
+
+Contenu du fichier : Controller\illustrationController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+
+$template = './views/pages/illustration_add_form.php';
+
+$errors = [];
+$successes = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $errors = [];
+    $successes = [];
+
+    if (isset($_POST['description']) && trim($_POST['description']) !== '') {
+        $description = $_POST['description'];
+    } else {
+        $errors[] = "Le champ 'Description' est obligatoire.";
+    }
+
+    if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+        $errors[] = "ID du livre invalide.";
+    } else {
+        $bookId = intval($_GET['id']);
+    }
+
+    if (isset($_FILES['photo']) && $_FILES['photo']['error'] == 0) {
+        $allowedTypes = ['image/jpeg', 'image/png'];
+        $maxSize = 2 * 1024 * 1024; // 2 Mo
+
+        $fileType = mime_content_type($_FILES['photo']['tmp_name']);
+        $fileSize = $_FILES['photo']['size'];
+        $filename = basename($_FILES['photo']['name']);
+        $folder_location = "assets/illustrations/" . $filename;
+
+        if (!in_array($fileType, $allowedTypes)) {
+            $errors[] = "Format de fichier non autorisé. Seuls les fichiers JPG et PNG sont acceptés.";
+        }
+
+        if ($fileSize > $maxSize) {
+            $errors[] = "Le fichier est trop volumineux. Taille max : 2 Mo.";
+        }
+
+        if (empty($errors)) {
+            if (move_uploaded_file($_FILES['photo']['tmp_name'], $folder_location)) {
+                $uploaded = true;
+            } else {
+                $errors[] = "Erreur lors du téléchargement du fichier.";
+            }
+        }
+    } else {
+        $errors[] = "Aucun fichier sélectionné ou erreur d'upload.";
+    }
+
+    $isCover = isset($_POST['is_Cover']) ? 1 : 0;
+
+    if (empty($errors) && addIllustration($isCover)) {
+        $successes[] = "Illustration ajoutée avec succès !";
+    }
+}
+
+?>0
+======================================================================================
+
+Contenu du fichier : Controller\loginController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+require_once("./services/regex.php");
+
+
+$template = './views/pages/login.php';
+
+
+
+$errors = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (isset($_POST['email']) && trim($_POST['email']) !== '') { 
+        $inputemail = $_POST['email'];
+        if (!preg_match($validPatterns['mail'], $inputemail)) {
+            $errors[] = "Le format mail n'est pas le bon";
+        }
+    } else {
+        $errors[] = "Le champ 'Email' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['password']) && trim($_POST['password']) !== '') { 
+        $inputpassword = $_POST['password'];
+        echo $inputpassword;
+        $userLogs = getUserByLogs($inputemail);
+
+    } else {
+        $errors[] = "Le champ 'mot de passe' est obligatoire. Merci de saisir une valeur.";
+    }
+    if (!$userLogs || !password_verify($password, $userLogs['password'])) {
+        $errors[] = "Il semble que vos informations ne soient pas correctes";
+    }
+
+    if (empty($errors)) {
+        $_SESSION['email'] = $inputemail;
+        $_SESSION['active_last_name'] = $userLogs["last_name"];
+        $_SESSION['active_first_name'] = $userLogs["first_name"];;
+        $_SESSION["is_logged"] = true;
+        redirect('home');
+    }
+}0
+======================================================================================
+
+Contenu du fichier : Controller\logsController.php
+
+======================================================================================
+<?php
+
+$template = './views/pages/logs.php';
+
+0
+======================================================================================
+
+Contenu du fichier : Controller\mailController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+require_once("./services/utils.php");
+session_start();  // Assurez-vous que la session démarre bien
+
+$template = './views/pages/mail.php';
+
+if (!isset($_SESSION['email'])) {
+    $errors[] = "Aucune adresse e-mail trouvée en session.";
+} else {
+    $to = $_SESSION['email'];
+    $subject = "Verification Code";
+
+    // Générer et stocker le code en session
+    if (!isset($_SESSION['verification_code'])) {  // Ne pas écraser le code existant si la page est rechargée
+        $_SESSION['verification_code'] = rand(100000, 999999);
+    }
+    
+    echo "Code envoyé : " . $_SESSION['verification_code']; // Pour debug
+
+    // Envoyer le faux mail
+    fakeMailSend($to, $subject, $_SESSION['verification_code']);
+}
+
+$password = password_hash($_SESSION['password'], PASSWORD_DEFAULT);
+
+// Vérification du code soumis
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['code'])) {
+    $userCode = trim($_POST['code']); // Supprimer les espaces
+    $userCode = intval($userCode); // Convertir en entier
+
+    if ($userCode === $_SESSION['verification_code']) {
+        $successes[] = "Création effectuée";
+        addUser($_SESSION["nom"], $_SESSION["prenom"], $_SESSION["birthdate"], $_SESSION["email"], $password);
+        
+        // Supprimer le code de session après validation pour éviter la réutilisation
+        unset($_SESSION['verification_code']);
+        $_SESSION["is_logged"] = true;
+        $_SESSION["active_name"] = $_SESSION['prenom'];
+        $_SESSION["active_last_name"] = $_SESSION['nom'];
+        $_SESSION["active_email"] = $_SESSION['email'];
+        redirect('home');
+    } else {
+        $errors[] = "Code incorrect";
+    }
+}
+0
+======================================================================================
+
+Contenu du fichier : Controller\modifierBookController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+require_once("./services/regex.php");
+$template = './views/pages/book_add_form.php';
+
+
+$errors = [];
+$successes = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (isset($_POST['title']) && trim($_POST['title']) !== '') { 
+        // OK
+        $title = $_POST['title'];
+        $titleLen = strlen($title);
+        if ($titleLen < 2 || $titleLen > 150) { 
+
+            $errors[] = "Le champ 'Titre' doit contenir entre 2 et 150 caractères.";
+        }
+    } else {
+        $errors[] = "Le champ 'Titre' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['isbn']) && trim($_POST['isbn']) !== '') { 
+        $isbn = $_POST['isbn'];
+        if (!preg_match($validPatterns['isbn'], $isbn)) { 
+            $errors[] = "Le champ 'ISBN' doit contenir exactement 13 chiffres.";
+        }
+    } else {
+        $errors[] = "Le champ 'ISBN' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['summary'])  && strlen($_POST["summary"]) > 65535) {
+        $errors[] = "Le champ 'Résumé' doit contenir au plus 65535 caractères.";
+    }
+
+    if (isset($_POST['publication_year']) && trim($_POST['publication_year']) !== '') { 
+        $publicationYear = $_POST['publication_year'];
+        if (!preg_match($validPatterns['year'], $publicationYear)) {
+            $errors[] = "Le champ 'Année de publication' doit être au format YYYY (ex. : 1997).";
+        }
+    } else {
+        $errors[] = "Le champ 'Année de publication' est obligatoire. Merci de saisir une valeur.";
+    }
+    if (empty($errors)) {
+        // updateBook();
+        $successes[] = "Le livre a bien été modifié";
+    }
+}0
+======================================================================================
+
+Contenu du fichier : Controller\signInController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+require_once("./services/regex.php");
+
+$template = './views/pages/signin.php';
+session_start();
+
+
+$errors = [];
+$successes = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (isset($_POST['nom']) && trim($_POST['nom']) !== '') { 
+        // OK
+        $nom = $_POST['nom'];
+        $nomlen = strlen($nom);
+        if ($nomlen > 50) { 
+
+            $errors[] = "Le champ 'Nom' doit contenir maximum 50 caractères.";
+        }
+    } else {
+        $errors[] = "Le champ 'Nom' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['prenom']) && trim($_POST['prenom']) !== '') { 
+        // OK
+        $prenom = $_POST['prenom'];
+        $prenomlen = strlen($prenom);
+        if ($prenomlen > 50) { 
+
+            $errors[] = "Le champ 'Prenom' doit contenir maximum 50 caractères.";
+        }
+    } else {
+        $errors[] = "Le champ 'Prenom' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (!isset($_POST['birthdate'])) {
+        $errors[] = "Le champs 'Date de naissance' est obligatoire. Merci de saisir une valeur.";
+    }
+    else {
+        $birthdate = $_POST['birthdate'];
+    }
+
+    if (isset($_POST['email']) && trim($_POST['email']) !== '') { 
+        $email = $_POST['email'];
+        if (!preg_match($validPatterns['mail'], $email)) {
+            $errors[] = "Le format mail n'est pas le bon";
+        }
+    } else {
+        $errors[] = "Le champ 'Email' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['password']) && trim($_POST['password']) !== '') { 
+        $password = $_POST['password'];
+        $passwordlen = strlen($password);
+        if ($passwordlen < 10) {
+            $errors[] = "Le mot de passe doit contenir au moins 10 caractères."; 
+        }
+        if (!preg_match($validPatterns['mail'], $password)) {
+            $errors[] = "Le format du mot de passe doit etre du un format email ex : johnsmith@mail.com";
+        }
+    } else {
+        $errors[] = "Le champ 'mot de passe' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (isset($_POST['password_confirm']) && trim($_POST['password_confirm']) !== '') { 
+        if ($_POST['password_confirm'] !== $_POST['password']) {
+            $errors[] = "Les mots de passe ne correspondent pas.";
+        }
+    } else {
+        $errors[] = "Le champ 'répétez le mot de passe' est obligatoire. Merci de saisir une valeur.";
+    }
+
+    if (empty($errors)) {
+        $_SESSION['email'] = $email;
+        $_SESSION['password'] = $password;
+        $_SESSION['nom'] = $nom;
+        $_SESSION['prenom'] = $prenom;
+        $_SESSION['birthdate'] = $birthdate;
+        redirect('Mail');
+    }
+}0
+======================================================================================
+
+Contenu du fichier : Controller\supprimerBookController.php
+
+======================================================================================
+<?php
+require_once("./models/articlesManager.php");
+require_once("./services/response.php");
+
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $id = intval($_GET['id']); // Sécurisation de l'entrée
+    if (deleteBook($id)) {
+        redirect('home'); // Redirection propre après suppression
+    } else {
+        echo "Erreur lors de la suppression du livre.";
+    }
+} else {
+    echo "ID invalide.";
+}
+?>0
+======================================================================================
+
+Contenu du fichier : Controller\unLogController.php
+
+======================================================================================
+<?php
+require_once("./services/response.php");
+session_start();
+
+$_SESSION = [];
+
+session_destroy();
+
+redirect("Logs");
+exit();0
+======================================================================================
+
+Contenu du fichier : index.php
+
+======================================================================================
+<?php
+
+require('router.php');
+require('./views/layout.php');0
+======================================================================================
+
+Contenu du fichier : models\articlesManager.php
+
+======================================================================================
+<?php
+require_once('./models/connection.php');
+
+
+function getBookById($id) {
+    $sql = "SELECT * FROM book where id = :id";
+    $query = dbConnect()->prepare($sql);
+    $query->execute();
+    $books = $query->fetchAll();
+    if (!$books) {
+        return [];
+    }
+return $books;
+}
+
+function getAllBooks() {
+    $sql = "SELECT * FROM book";
+    $query = dbConnect()->prepare($sql);
+    $query->execute();
+    $books = $query->fetchAll();
+    if (!$books) {
+        return [];
+    }
+return $books;
+}
+function addBook(){
+    if ((!empty($_POST['isbn']))
+    && (!empty($_POST['title']))
+    && (!empty($_POST['publication_year']))){
+
+    
+        $dt = time();
+        $datetime = date( "Y-m-d H:i:s", $dt );
+        $date = date("Y-m-d", $dt);
+
+        $sql = "INSERT INTO book (isbn, title, summary, publication_year, issue_date, created_at, updated_at) 
+        VALUES (:isbn, :title, :summary, :publication_year, :issue_date, :created_at, :updated_at)";
+
+        $query = dbConnect()->prepare($sql);
+        $query->execute([
+            ':isbn' => $_POST['isbn'],
+            ':title' => $_POST['title'],
+            ':summary' => $_POST['summary'],
+            ':publication_year' => $_POST['publication_year'],
+            ':issue_date' => $date,
+            ':created_at' => $datetime,
+            ':updated_at' => $datetime
+        ]);
+    }
+};
+
+function updateBook(){
+    if ((!empty($_POST['isbn']))
+    && (!empty($_POST['title']))
+    && (!empty($_POST['publication_year']))){
+
+        $dt = time();
+        $datetime = date( "Y-m-d H:i:s", $dt );
+
+        $sql = "UPDATE book SET isbn = :isbn, title = :title, summary = :summary, publication_year = :publication_year, updated_at = :updated_at WHERE id = :id";
+
+        $query = dbConnect()->prepare($sql);
+        $query->execute([
+            ':isbn' => $_POST['isbn'],
+            ':title' => $_POST['title'],
+            ':summary' => $_POST['summary'],
+            ':publication_year' => $_POST['publication_year'],
+            ':updated_at' => $datetime,
+            ':id' => $_GET['id']
+        ]);
+    }
+};
+
+function addIllustration($isCover) {
+    $db = dbConnect();
+    $sql = "INSERT INTO illustration (id_book, description, filename, isCover) 
+            VALUES (:id_book, :description, :filename, :isCover)";
+    
+    $query = $db->prepare($sql);
+    return $query->execute([
+        ':id_book' => $_GET['id'],
+        ':description' => $_POST['description'],
+        ':filename' => $_POST['filename'],
+        ':isCover' => $isCover
+    ]);
+}
+
+function getAllIllustrations() {
+    $sql = "SELECT * FROM illustration";
+    $query = dbConnect()->prepare($sql);
+    $query->execute();
+    $illustrations = $query->fetchAll();
+    if (!$illustrations) {
+        return [];
+    }
+    return $illustrations;
+}
+
+function deleteBook($id) {
+    $db = dbConnect();
+    
+    // Supprimer d'abord les illustrations associées
+    $sqlIllustration = "DELETE FROM illustration WHERE book_id = :id";
+    $queryIllustration = $db->prepare($sqlIllustration);
+    $queryIllustration->execute([':id' => $id]);
+
+    // Ensuite, supprimer le livre
+    $sqlBook = "DELETE FROM book WHERE id = :id";
+    $queryBook = $db->prepare($sqlBook);
+    return $queryBook->execute([':id' => $id]);
+}
+
+function addUser($nom , $prenom , $birthdate, $email, $password){
+    $dt = time();
+    $datetime = date( "Y-m-d H:i:s", $dt );
+
+    $sql = "INSERT INTO user (last_name, first_name, birth_date, email, password, created_at, updated_at) 
+    VALUES (:last_name, :first_name,:birth_date, :email, :password, :created_at, :updated_at)";
+
+    $query = dbConnect()->prepare($sql);
+    $query->execute([
+        ':last_name' => $nom,
+        ':first_name' => $prenom,
+        ':birth_date' => $birthdate,
+        ':email' => $email,
+        ':password' => $password,
+        ':created_at' => $datetime,
+        ':updated_at' => $datetime
+    ]);
+}
+
+function getUserByLogs($mail){
+    $sql = "SELECT email , password , first_name , last_name FROM user where email = :email";
+    $query = dbConnect()->prepare($sql);
+    $query->execute([
+        ':email' => $mail,
+    ]);
+    $user = $query->fetch(PDO::FETCH_ASSOC);
+
+    return $user ?: []; 
+}
+0
+======================================================================================
+
+Contenu du fichier : models\connection.php
+
+======================================================================================
+<?php
+
+require_once('./config/database.php');
+function dbConnect(){
+    try {
+      $db = new PDO(DB_CONFIG['db'] . ':host='. DB_CONFIG['host'] . ';port=' . DB_CONFIG['port'] . ' ;dbname=' . DB_CONFIG['dbname']  . ';charset=utf8',   DB_CONFIG['username'], DB_CONFIG['password']);
+    } catch (PDOException $e) {
+      die('Erreur : ' . $e->getMessage());
+    }
+
+    $db -> setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $db -> exec('SET NAMES utf8');
+    return $db;
+    
+ }0
+======================================================================================
+
+Contenu du fichier : public\css\app.css
+
+======================================================================================
+0
+======================================================================================
+
+Contenu du fichier : router.php
+
+======================================================================================
+<?php
+
+require_once("./config/routes.php");
+
+$availableRoutesNames = array_keys(AVLAIBLE_ROUTES);
+
+if (isset($_GET['page']) && in_array($_GET['page'], $availableRoutesNames , true)){
+    $page_name = $_GET['page'];
+    $controller = AVLAIBLE_ROUTES[$page_name]["template"];
+    $seo = AVLAIBLE_ROUTES[$page_name]["seo"];
+
+}
+else{
+    $controller = DEFAULT_ROUTE["template"];
+    $seo = DEFAULT_ROUTE["seo"];
+}
+
+
+require './Controller/' . $controller;0
+======================================================================================
+
+Contenu du fichier : services\regex.php
+
+======================================================================================
+<?php
+
+$validPatterns = array(
+    "isbn"           => "/^[0-9]{13}$/",
+    "year"           => "/^[0-9]{4}$/", // TODO: Refine this regex
+    "mail"           => "/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/",
+);0
+======================================================================================
+
+Contenu du fichier : services\response.php
+
+======================================================================================
+<?php
+function redirect(string $page): void {
+    header("Location: http://localhost/owasp/Template-mvc-php/index.php?page=$page");
+    exit;
+}
+?>0
+======================================================================================
+
+Contenu du fichier : services\utils.php
+
+======================================================================================
+<?php 
+
+function fakeMailSend($to, $subject, $content, $filePath="../public/mailbox/")
+{
+    if (!file_exists($filePath)) {
+        mkdir($filePath, 0755, true);
+    }
+
+    $dateTime = (new DateTime())->format('d/m/Y H:i:s');
+    $fileName = 'mailbox.txt';
+
+    $emailContent  = "----------" . PHP_EOL;
+    $emailContent .= "At: $dateTime" . PHP_EOL;
+    $emailContent .= "To: $to" . PHP_EOL;
+    $emailContent .= "Subject: $subject" . PHP_EOL;
+    $emailContent .= "Content: $content" . PHP_EOL;
+
+    if (file_put_contents($filePath . $fileName, $emailContent, FILE_APPEND) === false) {
+        // FIXME: error handling
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * USAGE
+ * 
+ * $to = "john.doe@mailbox.com";
+ * $subject = "Verification Code";
+ * $content = "653298";
+ * fakeMailSend($to, $subject, $content);
+ */0
+======================================================================================
+
+Contenu du fichier : views\layout.php
+
+======================================================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $seo['title'] ?></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <meta name="description" content=<?= $seo["description"] ?>>
+</head>
+<body>
+    <?php require('views/partials/_header.php') ?>
+    <main>
+        <?php require($template) ?>
+    </main>
+    <?php require('views/partials/_footer.html') ?>
+</body>
+</html>0
+======================================================================================
+
+Contenu du fichier : views\pages\404.php
+
+======================================================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="views/style/404.css">
+</head>
+<body>
+<h1>error 404 page not found</h1>
+</body>
+</html>
+
+<div class = 'error_mess'>il semble y avoir un problème </div>
+0
+======================================================================================
+
+Contenu du fichier : views\pages\book_add_form.php
+
+======================================================================================
+<div>
+<form action="" method="POST">
+    <label for="title">Titre du livre</label>
+    <input type="text" name = "title" id="title" required>
+
+    <label for="isbn">isbn du livre (13 chiffre)</label>
+    <input type="number" name = "isbn" id="isbn" required>
+
+    <label for="summary">Résumé du livre</label>
+    <input type="text" name = "summary" id="summary" >
+
+    <label for="publication_year">Date de publication</label>
+    <input type="number" name = "publication_year" id="publication_year" required>
+
+    <?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+
+    <input type="submit" text="Soumettre">
+
+</form>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\pages\book_update.php
+
+======================================================================================
+<div>
+<form action="" method="POST">
+    <label for="title">Titre du livre</label>
+    <!-- <input type="text" name = "title" id="title" value="<?=  $book["title"] ?>" required> -->
+
+    <label for="isbn">isbn du livre (13 chiffre)</label>
+    <input type="number" name = "isbn" id="isbn" required>
+
+    <label for="summary">Résumé du livre</label>
+    <input type="text" name = "summary" id="summary" >
+
+    <label for="publication_year">Date de publication</label>
+    <input type="number" name = "publication_year" id="publication_year" required>
+
+    <input type="submit" text="Soumettre">
+
+</form>
+<?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\pages\home.php
+
+======================================================================================
+<div id = "home">
+    <h1>Liste de nos livres :</h1>
+    <div id = 'books'>
+        <?php foreach($books as $book) {?>
+            <div id="book">
+            <h2><?= $book['title'] ?></h2>
+            <p><?= $book['isbn'] ?></p>
+            <p><?= $book['summary'] ?></p>
+            <p><?= $book['publication_year'] ?></p>
+            <p><?= $book['issue_date'] ?></p>
+            <p><?= $book['created_at'] ?></p>
+            <p><?= $book['updated_at'] ?></p>
+            <?php foreach($illustrations as $illustration) {
+                if ($illustration['book_id'] == $book['id']) { ?>
+                    <img src="<?= $illustration['filename'] ?>" alt="<?= $illustration['description'] ?>">
+                <?php }
+            } ?>
+            <a href="index.php?page=Ajout_illustration&id=<?= $book["id"] ?>">Ajouter Illustration</a>
+            <a href="index.php?page=Modifier&id=<?= $book["id"] ?>">Modifier livre</a>
+            <a href="index.php?page=Supprimer&id=<?= $book["id"] ?>">Supprimer livre</a>
+            </div>
+        <?php } ?>
+
+    </div>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\pages\illustration_add_form.php
+
+======================================================================================
+<div>
+<form action="" method="POST" enctype="multipart/form-data">
+
+    <label for="description">Description de l'image</label>
+    <input type="text" name="description" id="description" required>
+
+    <label for="photo">Fichier</label>
+    <input type="file" name="photo" id="photo" required accept=".jpg, .jpeg, .png">
+
+    <boite>
+        <label for="is_Cover">page de couverture</label>
+        <input type="checkbox" name = "is_Cover" id="is_Cover" >
+    </boite>
+
+    <input type="submit" value="Soumettre">
+
+
+    <?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+
+</form>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\pages\login.php
+
+======================================================================================
+<h1>Inscription</h1>
+    <form action="" method="POST">
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Se connecter</button>
+
+        <?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+
+    </form>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\pages\logs.php
+
+======================================================================================
+<?php
+session_start();
+if (isset($_SESSION['is_logged']) && $_SESSION['is_logged']) {
+?>
+    <h1>Vos informations :</h1>
+    <ul>
+            <li><?=$_SESSION["active_email"]?></li>
+            <li><?=$_SESSION["active_name"]?></li>
+            <li><?=$_SESSION["active_last_name"]?></li>
+    </ul>
+    <a href="index.php?page=Deconnexion">Se deconnecter</a>
+
+<?php
+} else {
+?>
+    <div id="logs">
+        <ul>
+            <li><a href="index.php?page=Login">Se connecter</a></li>
+            <li><a href="index.php?page=SignIn">S'inscrire</a></li>
+        </ul>
+    </div>
+<?php
+}
+?>0
+======================================================================================
+
+Contenu du fichier : views\pages\mail.php
+
+======================================================================================
+<h1>Rentrez le code de vérification envoyer par mail pour finaliser la création de votre compte</h1>
+<form action="" method="post">
+    <label for="code">code</label>
+    <input type="number" id="code" name="code" required>
+    <button type="submit">Valider</button>
+
+    <?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+</form>0
+======================================================================================
+
+Contenu du fichier : views\pages\signin.php
+
+======================================================================================
+<h1>Inscription</h1>
+    <form action="" method="POST">
+        <label for="nom">Nom :</label>
+        <input type="text" id="nom" name="nom" required>
+
+        <label for="prenom">Prénom :</label>
+        <input type="text" id="prenom" name="prenom" required>
+
+        <label for="email">Email :</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="birthdate">Date de naissance :</label>
+        <input type="date" id="birthdate" name="birthdate" required>
+
+        <label for="password">Mot de passe :</label>
+        <ul>
+        <li>minimum 10 caractère</li>
+        <li>un @ doit etre présent</li>
+        </ul>
+        <input type="password" id="password" name="password" required>
+
+        <label for="password_confirm">Répéter le mot de passe :</label>
+        <input type="password" id="password_confirm" name="password_confirm" required>
+
+        <button type="submit">S'inscrire</button>
+
+        <?php if (!empty($errors)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                    <li style="color: red;"><?php echo htmlspecialchars($error); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+    <?php if (!empty($successes)): ?>
+        <message class="error-messages">
+            <ul>
+                <?php foreach ($successes as $success): ?>
+                    <li style="color: green;"><?php echo htmlspecialchars($success); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </message>
+    <?php endif; ?>
+
+    </form>
+</div>0
+======================================================================================
+
+Contenu du fichier : views\partials\_footer.html
+
+======================================================================================
+<link rel="stylesheet" href="Views/style/style.css">
+<footer>
+    <nav class="footer">
+        <ul>
+        </ul>
+    </nav>
+</footer>0
+======================================================================================
+
+Contenu du fichier : views\partials\_header.php
+
+======================================================================================
+<?
+?>
+<link rel="stylesheet" href="views/style/layout.css">
+<header>
+    <nav class="navbar">
+        <ul>
+            <li><a href="?page=home"> Acceuil</a></li>
+            <li><a href="?page=Ajouter">Ajouter</a></li>
+            <li><a href="?page=Logs">Compte</a></li>
+
+            
+
+    </nav>
+</header>0
+======================================================================================
+
+Contenu du fichier : views\style\layout.css
+
+======================================================================================
+header ul{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+ li{
+    padding: 15px;
+}
+
+
+
+
+form{
+    margin-left: 15%;
+    width: 70%;
+}
+
+#books{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    border-radius: 20px;
+}
+
+#book{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    margin: 10px;
+    padding: 10px;
+    width: 50%;
+}
+
+h1{
+    text-align: center;
+    font-style: italic;
+}
+
+header{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+
+}
+
+
+boite{
+    display:flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+
+
+}
+0

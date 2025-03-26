@@ -1,12 +1,14 @@
+<?
+?>
 <link rel="stylesheet" href="views/style/layout.css">
 <header>
     <nav class="navbar">
         <ul>
             <li><a href="?page=home"> Acceuil</a></li>
-            <li><a href="?page=contact"> Contact</a></li>
-            <li><a href="?page=about"> About</a></li>
             <li><a href="?page=Ajouter">Ajouter</a></li>
-            <li><a href="?page=Modifier">Modifier</a></li>
-        </ul>
+            <li><a href="?page=Logs">Compte</a></li>
+
+            
+
     </nav>
 </header>
