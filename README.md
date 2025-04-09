@@ -1,4 +1,15 @@
 # Projet « MediaTek »
+pour faire fonctionner utiliser la base sql donnée en mail
++
+creer un env.php à la racine du projet contenant les variables suivantes avec les noms adaptés à vos besoins:
+
+ const db = '';
+ const host = '';
+ const port = '';
+ const dbname = '';
+ const username = '';
+ const password = '';
+
 ## État d'avancement
 - TPs 01 à 03
 - [x] CR(U)D `Book` avec validation / *sanitization*
