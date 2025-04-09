@@ -141,3 +141,14 @@ function getUserByLogs($mail){
 
     return $user ?: []; 
 }
+
+function getUserByMail($mail){
+    $sql = "SELECT email FROM user where email = :email";
+    $query = dbConnect()->prepare($sql);
+    $query->execute([
+        ':email' => $mail,
+    ]);
+    $user = $query->fetch(PDO::FETCH_ASSOC);
+
+    return $user ?: []; 
+}

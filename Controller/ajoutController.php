@@ -11,7 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['title']) && trim($_POST['title']) !== '') { 
         // OK
-        $title = $_POST['title'];
+        
+        $title = filter_input(INPUT_POST, 'title' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $titleLen = strlen($title);
         if ($titleLen < 2 || $titleLen > 150) { 
 
@@ -22,7 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['isbn']) && trim($_POST['isbn']) !== '') { 
-        $isbn = $_POST['isbn'];
+
+        $isbn = filter_input(INPUT_POST, 'isbn' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
         if (!preg_match($validPatterns['isbn'], $isbn)) { 
             $errors[] = "Le champ 'ISBN' doit contenir exactement 13 chiffres.";
         }
@@ -35,7 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_POST['publication_year']) && trim($_POST['publication_year']) !== '') { 
-        $publicationYear = $_POST['publication_year'];
+
+        $publicationYear = filter_input(INPUT_POST, 'publication_year' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
         if (!preg_match($validPatterns['year'], $publicationYear)) {
             $errors[] = "Le champ 'Année de publication' doit être au format YYYY (ex. : 1997).";
         }

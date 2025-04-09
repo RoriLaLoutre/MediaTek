@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['nom']) && trim($_POST['nom']) !== '') { 
         // OK
-        $nom = $_POST['nom'];
+        $nom = filter_input(INPUT_POST, 'nom' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $nomlen = strlen($nom);
         if ($nomlen > 50) { 
 
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['prenom']) && trim($_POST['prenom']) !== '') { 
         // OK
-        $prenom = $_POST['prenom'];
+        $prenom = filter_input(INPUT_POST, 'prenom' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $prenomlen = strlen($prenom);
         if ($prenomlen > 50) { 
 
@@ -39,11 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Le champs 'Date de naissance' est obligatoire. Merci de saisir une valeur.";
     }
     else {
-        $birthdate = $_POST['birthdate'];
+        $birthdate = filter_input(INPUT_POST, 'birthdate' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     }
 
     if (isset($_POST['email']) && trim($_POST['email']) !== '') { 
-        $email = $_POST['email'];
+
+        $email = filter_input(INPUT_POST, 'email' , FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         if (!preg_match($validPatterns['mail'], $email)) {
             $errors[] = "Le format mail n'est pas le bon";
         }
@@ -70,6 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         $errors[] = "Le champ 'répétez le mot de passe' est obligatoire. Merci de saisir une valeur.";
+    }
+    if (getUserByMail($email)) {
+        $errors[] = "Cette adresse e-mail est déjà utilisée.";
     }
 
     if (empty($errors)) {

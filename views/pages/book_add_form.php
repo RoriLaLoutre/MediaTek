@@ -9,7 +9,7 @@
     <label for="summary">Résumé du livre</label>
     <input type="text" name = "summary" id="summary" >
 
-    <label for="publication_year">Date de publication</label>
+    <label for="publication_year">Année de publication</label>
     <input type="number" name = "publication_year" id="publication_year" required>
 
     <?php if (!empty($errors)): ?>

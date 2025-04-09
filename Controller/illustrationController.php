@@ -12,7 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $successes = [];
 
     if (isset($_POST['description']) && trim($_POST['description']) !== '') {
-        $description = $_POST['description'];
+        $description = filter_input(INPUT_POST, 'description', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
     } else {
         $errors[] = "Le champ 'Description' est obligatoire.";
     }
