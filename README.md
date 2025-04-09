@@ -1,5 +1,5 @@
 # Projet « MediaTek »
-pour faire fonctionner utiliser la base sql donnée en mail
+pour faire fonctionner utiliser wamp ou tout autre outils similaire, utiliser la base sql donnée en mail
 +
 creer un env.php à la racine du projet contenant les variables suivantes avec les noms adaptés à vos besoins:
 
